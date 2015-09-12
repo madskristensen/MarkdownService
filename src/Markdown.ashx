@@ -15,21 +15,36 @@ public class Markdown : IHttpHandler
         context.Response.ContentType = "text/html";
 
         Uri url;
-        if (Uri.TryCreate(context.Request.QueryString["url"], UriKind.Absolute, out url))
+        if (!Uri.TryCreate(context.Request.QueryString["url"], UriKind.Absolute, out url))
+            return;
+
+        try
         {
             string content = DownloadFile(url);
 
             var result = RenderMarkdown(content);
 
-            foreach (Match match in _regex.Matches(result))
-            {
-                string relative = match.Groups["path"].Value;
-                string absolute = GetAbsoluteRoot(url) + "/" + relative;
-                result = result.Replace(relative, absolute);
-            }
+            result = MakeAbsolute(result, url);
 
             context.Response.Write(result);
         }
+        catch (Exception)
+        {
+            context.Response.Write("The markdown url could not be resolved.");
+            context.Response.Status = "404 Not Found";
+        }
+    }
+
+    private static string MakeAbsolute(string result, Uri url)
+    {
+        foreach (Match match in _regex.Matches(result))
+        {
+            string relative = match.Groups["path"].Value;
+            string absolute = GetAbsoluteRoot(url) + "/" + relative;
+            result = result.Replace(relative, absolute);
+        }
+
+        return result;
     }
 
     private static string GetAbsoluteRoot(Uri url)

@@ -7,22 +7,27 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "MarkdownService", "src\", "
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5.1"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_41437"
-		Debug.AspNetCompiler.PhysicalPath = "src"
+		Debug.AspNetCompiler.PhysicalPath = "src\"
 		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_41437\"
 		Debug.AspNetCompiler.Updateable = "true"
 		Debug.AspNetCompiler.ForceOverwrite = "true"
 		Debug.AspNetCompiler.FixedNames = "false"
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.VirtualPath = "/localhost_41437"
-		Release.AspNetCompiler.PhysicalPath = "src"
+		Release.AspNetCompiler.PhysicalPath = "src\"
 		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_41437\"
 		Release.AspNetCompiler.Updateable = "true"
 		Release.AspNetCompiler.ForceOverwrite = "true"
 		Release.AspNetCompiler.FixedNames = "false"
 		Release.AspNetCompiler.Debug = "False"
 		VWDPort = "41437"
-		SlnRelativePath = "src"
+		SlnRelativePath = "src\"
 		DefaultWebSiteLanguage = "Visual C#"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E6BD3979-B90F-49F4-876F-849A20FAA846}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
 	EndProjectSection
 EndProject
 Global
