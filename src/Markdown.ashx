@@ -12,26 +12,44 @@ public class Markdown : IHttpHandler
 
     public void ProcessRequest(HttpContext context)
     {
-        context.Response.ContentType = "text/html";
-
         Uri url;
         if (!Uri.TryCreate(context.Request.QueryString["url"], UriKind.Absolute, out url))
             return;
 
         try
         {
-            string content = DownloadFile(url);
+            string content = DownloadFile(url, context);
 
-            var result = RenderMarkdown(content);
+            if (!context.Response.SuppressContent)
+            {
+                var result = RenderMarkdown(content);
 
-            result = MakeAbsolute(result, url);
+                result = MakeAbsolute(result, url);
 
-            context.Response.Write(result);
+                context.Response.Write(result);
+            }
+
+            SetHeaders(context);
         }
         catch (Exception)
         {
             context.Response.Write("The markdown url could not be resolved.");
             context.Response.Status = "404 Not Found";
+        }
+    }
+
+    private static void SetHeaders(HttpContext context)
+    {
+        context.Response.ContentType = "text/html";
+
+        if (!context.Request.IsLocal)
+        {
+            context.Response.Cache.SetValidUntilExpires(true);
+            context.Response.Cache.SetCacheability(HttpCacheability.Public);
+            context.Response.Cache.SetExpires(DateTime.Now.AddMinutes(10));
+            context.Response.Cache.VaryByParams["url"] = true;
+            context.Response.Cache.SetOmitVaryStar(true);
+            context.Response.Cache.SetMaxAge(new TimeSpan(0, 10, 0));
         }
     }
 
@@ -54,11 +72,36 @@ public class Markdown : IHttpHandler
         return url.AbsoluteUri.Substring(0, index);
     }
 
-    private static string DownloadFile(Uri url)
+    private static string DownloadFile(Uri url, HttpContext context)
     {
         using (WebClient client = new WebClient())
         {
-            return client.DownloadString(url);
+            string content = client.DownloadString(url);
+            string etag = client.ResponseHeaders["ETag"];
+
+            SetConditionalGetHeaders(etag, context);
+
+            return content;
+        }
+    }
+
+    public static void SetConditionalGetHeaders(string etag, HttpContext context)
+    {
+        string ifNoneMatch = context.Request.Headers["If-None-Match"];
+
+        if (ifNoneMatch != null && ifNoneMatch.Contains(","))
+        {
+            ifNoneMatch = ifNoneMatch.Substring(0, ifNoneMatch.IndexOf(",", StringComparison.Ordinal));
+        }
+
+        context.Response.AppendHeader("Etag", etag);
+        context.Response.Cache.VaryByHeaders["If-None-Match"] = true;
+
+        if (etag == ifNoneMatch)
+        {
+            context.Response.ClearContent();
+            context.Response.StatusCode = (int)HttpStatusCode.NotModified;
+            context.Response.SuppressContent = true;
         }
     }
 
@@ -129,10 +172,7 @@ public class Markdown : IHttpHandler
 
     public bool IsReusable
     {
-        get
-        {
-            return false;
-        }
+        get { return false; }
     }
 
 }
