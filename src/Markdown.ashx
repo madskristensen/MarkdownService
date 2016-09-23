@@ -4,11 +4,17 @@ using System;
 using System.Web;
 using System.Net;
 using System.Text.RegularExpressions;
+using Markdig;
 
 public class Markdown : IHttpHandler
 {
     private static Regex _regex = new Regex("\\s(src|href)=(\"|')(?!https?://)(?<path>[^\"']+)\\2", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    public static Regex rxExtractLanguage = new Regex("^({{(.+)}}[\r\n])", RegexOptions.Compiled);
+    private static MarkdownPipeline _pipeline = new MarkdownPipelineBuilder()
+                                                       .UsePragmaLines()
+                                                       .UseDiagrams()
+                                                       .UseAdvancedExtensions()
+                                                       .UseYamlFrontMatter()
+                                                       .Build();
 
     public void ProcessRequest(HttpContext context)
     {
@@ -22,7 +28,7 @@ public class Markdown : IHttpHandler
 
             if (!context.Response.SuppressContent)
             {
-                var result = RenderMarkdown(content);
+                var result = Markdig.Markdown.ToHtml(content, _pipeline);
 
                 result = MakeAbsolute(result, url);
 
@@ -102,71 +108,6 @@ public class Markdown : IHttpHandler
             context.Response.ClearContent();
             context.Response.StatusCode = (int)HttpStatusCode.NotModified;
             context.Response.SuppressContent = true;
-        }
-    }
-
-    private static string RenderMarkdown(string content)
-    {
-        var markdown = new MarkdownDeep.Markdown();
-        markdown.ExtraMode = true;
-        markdown.SafeMode = false;
-        markdown.FormatCodeBlock = FormatCodePrettyPrint;
-
-        content = content.Replace("```", "~~~");
-
-        // Change the fenced code block language for the markdown.FormatCodeBlock method
-        content = Regex.Replace(content, @"(~~~\s?)(?<lang>[^\s]+)", "~~~\r{{${lang}}}");
-
-        // Issue with MarkdownDeep reported here https://github.com/toptensoftware/markdowndeep/issues/63
-        foreach (Match match in Regex.Matches(content, "( {0,3}>)+( {0,3})([^\r\n]+)", RegexOptions.Multiline))
-        {
-            content = content.Replace(match.Value, match.Value + "  ");
-        }
-
-        var result = markdown
-                    .Transform(content)
-                    .Replace("[ ] ", "<input type=\"checkbox\" disabled /> ")
-                    .Replace("[x] ", "<input type=\"checkbox\" disabled checked /> ");
-
-        return result;
-    }
-
-    private static string FormatCodePrettyPrint(MarkdownDeep.Markdown m, string code)
-    {
-        // Try to extract the language from the first line
-        var match = rxExtractLanguage.Match(code);
-        string language = string.Empty;
-
-        if (match.Success)
-        {
-            var g = match.Groups[2];
-            language = g.ToString().Trim().ToLowerInvariant();
-
-            code = code.Substring(match.Groups[1].Length);
-        }
-
-        if (string.IsNullOrEmpty(language))
-        {
-            var d = m.GetLinkDefinition("default_syntax");
-            if (d != null)
-                language = d.title;
-        }
-
-        // Common replacements
-        if (language.Equals("C#", StringComparison.OrdinalIgnoreCase))
-            language = "cs";
-        else if (language.Equals("csharp", StringComparison.OrdinalIgnoreCase))
-            language = "cs";
-        else if (language.Equals("C++", StringComparison.OrdinalIgnoreCase))
-            language = "cpp";
-
-        if (string.IsNullOrEmpty(language))
-        {
-            return "<pre><code>" + code + "</code></pre>\n";
-        }
-        else
-        {
-            return "<pre class=\"prettyprint lang-" + language + "\"><code>" + code + "</code></pre>\n";
         }
     }
 
