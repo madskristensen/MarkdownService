@@ -10,7 +10,6 @@ public class Markdown : IHttpHandler
 {
     private static Regex _regex = new Regex("\\s(src|href)=(\"|')(?!https?://)(?<path>[^\"']+)\\2", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static MarkdownPipeline _pipeline = new MarkdownPipelineBuilder()
-                                                       .UsePragmaLines()
                                                        .UseDiagrams()
                                                        .UseAdvancedExtensions()
                                                        .UseYamlFrontMatter()
