@@ -82,6 +82,7 @@ public class Markdown : IHttpHandler
     {
         using (WebClient client = new WebClient())
         {
+            client.Encoding = System.Text.Encoding.UTF8;
             string content = client.DownloadString(url);
             string etag = client.ResponseHeaders["ETag"];
 
