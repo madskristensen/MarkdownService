@@ -63,8 +63,12 @@ public class Markdown : IHttpHandler
         foreach (Match match in _regex.Matches(result))
         {
             string relative = match.Groups["path"].Value;
-            string absolute = GetAbsoluteRoot(url) + "/" + relative;
-            result = result.Replace(relative, absolute);
+
+            if (relative[0] != '#')
+            {
+                string absolute = GetAbsoluteRoot(url) + "/" + relative;
+                result = result.Replace(relative, absolute);
+            }
         }
 
         return result;
