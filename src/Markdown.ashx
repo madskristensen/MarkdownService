@@ -83,6 +83,8 @@ public class Markdown : IHttpHandler
 
     private static string DownloadFile(Uri url, HttpContext context)
     {
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
+
         using (WebClient client = new WebClient())
         {
             client.Encoding = System.Text.Encoding.UTF8;
