@@ -16,6 +16,11 @@ public class Markdown : IHttpHandler
                                                        .UseYamlFrontMatter()
                                                        .Build();
 
+    static Markdown()
+    {
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
+    }
+
     public void ProcessRequest(HttpContext context)
     {
         Uri url;
@@ -62,18 +67,14 @@ public class Markdown : IHttpHandler
 
     private static string MakeAbsolute(string result, Uri url)
     {
-        foreach (Match match in _regex.Matches(result))
+        string root = GetAbsoluteRoot(url);
+        return _regex.Replace(result, m =>
         {
-            string relative = match.Groups["path"].Value;
-
-            if (relative[0] != '#')
-            {
-                string absolute = GetAbsoluteRoot(url) + "/" + relative;
-                result = result.Replace(relative, absolute);
-            }
-        }
-
-        return result;
+            string relative = m.Groups["path"].Value;
+            if (relative[0] == '#')
+                return m.Value;
+            return m.Value.Replace(relative, root + relative);
+        });
     }
 
     private static string GetAbsoluteRoot(Uri url)
@@ -85,8 +86,6 @@ public class Markdown : IHttpHandler
 
     private static string DownloadFile(Uri url, HttpContext context)
     {
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
-
         using (WebClient client = new WebClient())
         {
             client.Encoding = System.Text.Encoding.UTF8;
@@ -121,7 +120,7 @@ public class Markdown : IHttpHandler
 
     public bool IsReusable
     {
-        get { return false; }
+        get { return true; }
     }
 
 }
