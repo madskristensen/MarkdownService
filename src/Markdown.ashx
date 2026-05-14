@@ -9,6 +9,7 @@ using Markdig;
 public class Markdown : IHttpHandler
 {
     private static Regex _regex = new Regex("\\s(src|href)=(\"|')(?!https?://)(?<path>[^\"']+)\\2", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static Regex _imgRegex = new Regex("<img(?![^>]*\\bloading=)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static MarkdownPipeline _pipeline = new MarkdownPipelineBuilder()
                                                        .UseDiagrams()
                                                        .UseAdvancedExtensions()
@@ -30,6 +31,7 @@ public class Markdown : IHttpHandler
                 var result = Markdig.Markdown.ToHtml(content, _pipeline);
 
                 result = MakeAbsolute(result, url);
+                result = _imgRegex.Replace(result, "<img loading=\"lazy\"");
 
                 context.Response.Write(result);
             }
